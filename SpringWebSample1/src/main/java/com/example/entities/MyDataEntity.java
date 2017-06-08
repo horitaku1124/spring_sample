@@ -14,11 +14,11 @@ import lombok.Data;
 @Table(name="mydata")
 public class MyDataEntity {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	@Column
-	private long id;
-	
-	@Column
-	private String name;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column
+  private long id;
+  
+  @Column
+  private String name;
 }
