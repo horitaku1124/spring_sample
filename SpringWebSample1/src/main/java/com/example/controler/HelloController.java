@@ -18,7 +18,7 @@ import com.example.repositories.SampleTableRepository;
 @RequestMapping("/hello")
 public class HelloController {
   @PersistenceContext
-    private EntityManager entityManager;
+  private EntityManager entityManager;
   
   @Autowired
   private SampleTableRepository sampleTable;

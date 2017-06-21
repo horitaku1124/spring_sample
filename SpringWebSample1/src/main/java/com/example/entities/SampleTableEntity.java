@@ -21,4 +21,7 @@ public class SampleTableEntity {
   
   @Column
   private String name;
+  
+  @Column
+  private long status;
 }
