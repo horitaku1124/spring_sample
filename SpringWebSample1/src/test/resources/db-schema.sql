@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS `sample_table`;
 CREATE TABLE IF NOT EXISTS `sample_table` (
 `id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
