@@ -8,7 +8,7 @@ import com.example.repositories.SampleTableRepository;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-public class WelcomController {
+public class WelcomeController {
   private String message = "Welcome Spring";
 
   @Autowired
