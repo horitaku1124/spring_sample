@@ -49,7 +49,7 @@ public class WelcomeControllerTest {
   private WebClient webClient;
 
   @Before
-  public void setup() throws IOException {
+  public void setup() {
     MockMvc mvc = MockMvcBuilders.webAppContextSetup(context)
         .addFilters(new CharacterEncodingFilter("UTF-8", true))
         .alwaysDo(log())
@@ -71,11 +71,10 @@ public class WelcomeControllerTest {
     assertThat(text, is("Message: Welcome Spring"));
   }
   
-//  @Test
-//  public void testController2() throws Exception {
-//    driver.get("http://localhost/welcome2");
-//
-//    String text = driver.findElement(By.id("myMessage2")).getText();
-//    assertThat(text, is("All: 1"));
-//  }
+  @Test
+  public void testController2() throws Exception {
+    HtmlPage page = this.webClient.getPage("http://localhost/welcome2");
+    String text = page.getElementById("myMessage2").getTextContent();
+    assertThat(text, is("All: 1"));
+  }
 }
