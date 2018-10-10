@@ -1,0 +1,15 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Spring Boot Test2</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+  <h1>File info</h1>
+
+  <p><span id="comment" th:text="${comment}"></span></p>
+  <p><span id="file_size" th:text="${file_size}"></span> Bytes</p>
+
+  <a href="/uploadForm">Back</a>
+</body>
+</html>
