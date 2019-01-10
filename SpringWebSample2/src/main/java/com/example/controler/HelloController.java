@@ -2,6 +2,9 @@ package com.example.controler;
 
 import com.example.entity.MemberEntity;
 import com.example.repository.MemberRepository;
+import com.lambdaworks.redis.RedisClient;
+import com.lambdaworks.redis.RedisConnection;
+import com.lambdaworks.redis.RedisURI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,5 +35,17 @@ public class HelloController {
       }
       return title.toString();
   }
+    @RequestMapping("/world3")
+    public String world3() {
+        RedisClient redisClient = new RedisClient(
+                RedisURI.create("redis://127.0.0.1:6379"));
+        RedisConnection<String, String> connection = redisClient.connect();
+
+        String value = connection.get("my_key_1");
+
+        connection.close();
+        redisClient.shutdown();
+        return value;
+    }
 
 }
