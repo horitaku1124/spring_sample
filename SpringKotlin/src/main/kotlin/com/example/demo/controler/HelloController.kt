@@ -15,13 +15,13 @@ import javax.persistence.PersistenceContext
 @RequestMapping("/hello")
 public class HelloController {
   @PersistenceContext
-  lateinit private var entityManager:EntityManager
+  private lateinit var entityManager:EntityManager
 
   @Autowired
-  lateinit private var sampleTable:SampleTableRepository
+  private lateinit var sampleTable:SampleTableRepository
 
   @Autowired
-  lateinit private var myData: MyDataRepository
+  private lateinit var myData: MyDataRepository
 
   @RequestMapping("/world")
   fun world() :String{
