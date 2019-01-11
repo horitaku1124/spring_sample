@@ -25,7 +25,7 @@ public class HelloController {
 
   @RequestMapping("/world")
   fun world() :String{
-    return "Hello Kotlin 2017";
+    return "Hello Kotlin 2019";
   }
 
   @RequestMapping("/world2")
