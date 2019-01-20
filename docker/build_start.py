@@ -14,7 +14,9 @@ container = client.containers.create('openjdk:8',
                                          auto_remove=False,
                                          volumes = {
                                              pwd: {'bind': '/mnt/spring_sample', 'mode': 'rw'}
-                                         })
+                                         },
+                                         ports = {'8080/tcp': [8080]}
+                                         )
 
 container.start()  
 print('Container Started : {}'.format(container.status))
@@ -56,6 +58,19 @@ env = {
 
 print('7')
 log = container.exec_run('./mvnw -e install -Dmaven.test.skip=true',
+                                  workdir="/mnt/spring_sample/SpringWebSample1",
+                                  stdout=True,
+                                  stderr=True,
+                                  stream=True,
+                                  environment = env)
+
+for line in log[1]:
+    print(str(line))
+
+
+
+print('8')
+log = container.exec_run('./mvnw spring-boot:run',
                                   workdir="/mnt/spring_sample/SpringWebSample1",
                                   stdout=True,
                                   stderr=True,
