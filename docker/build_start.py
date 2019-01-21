@@ -1,7 +1,7 @@
 import docker
-import os, sys
+import os, sys, signal
 
-
+started = False
 os.chdir("../")
 print ("Mount Dir: %s" % os.getcwd())
 pwd = os.getcwd()
@@ -20,7 +20,7 @@ container = client.containers.create('openjdk:8',
 
 container.start()  
 print('Container Started : {}'.format(container.status))
-
+started = True
 workdir = "/mnt/spring_sample/SpringWebSample1"
 
 
@@ -35,6 +35,16 @@ commands = [
     './mvnw spring-boot:run',
 ]
 
+
+def func(signum, frame):
+    started = False
+    print('Shutdown forced =>', signum)
+    container.stop()
+    print(container.status)
+    container.remove()
+
+signal.signal(signal.SIGINT, func)
+
 for cmd in commands:
     print('>' + cmd)
     log = container.exec_run(cmd,
@@ -45,9 +55,9 @@ for cmd in commands:
                             environment=env)
 
     for line in log[1]:
-        print(line)
+        print(line.decode('UTF-8'), end='')
 
-
-container.stop()
-print(container.status)
-container.remove()
+if started:
+    container.stop()
+    print(container.status)
+    container.remove()
