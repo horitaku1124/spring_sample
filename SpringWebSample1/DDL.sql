@@ -26,7 +26,8 @@ CREATE TABLE IF NOT EXISTS `mydata` (
 DROP TABLE IF EXISTS `sample_table`;
 CREATE TABLE IF NOT EXISTS `sample_table` (
 `id` bigint(20) NOT NULL,
-  `name` varchar(255) DEFAULT NULL
+  `name` varchar(255) DEFAULT NULL,
+  `status` int(11) DEFAULT  NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
