@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * https://github.com/spotify/docker-client
+ */
 @Ignore
 public class Test1 {
   private static DockerClient docker;
