@@ -10,6 +10,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.springframework.boot.test.web.client.TestRestTemplate;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -17,6 +18,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * https://github.com/spotify/docker-client
@@ -27,6 +31,8 @@ public class Test1 {
   private static String containerId = null;
   private static Thread thread = null;
   private static boolean started = false;
+
+  private TestRestTemplate restTemplate = new TestRestTemplate();
 
   @BeforeClass
   public static void setupServer() throws DockerException, InterruptedException {
@@ -91,6 +97,8 @@ public class Test1 {
   @Test
   public void test11() {
     System.out.println(" -- test11() --");
+    String result = restTemplate.getForObject("http://localhost:8080/hello/world", String.class);
+    assertThat(result, is("Hello world 2017"));
   }
 
   @AfterClass
