@@ -34,7 +34,7 @@ dependencies {
     testCompile "org.springframework.security:spring-security-test"
     testCompile "org.seleniumhq.selenium:selenium-java"
     testCompile "net.sourceforge.htmlunit:htmlunit:2.32"
-    testCompile "com.spotify:docker-client:8.14.0:shaded"
+    testCompile "com.spotify:docker-client:8.16.0:shaded"
     testCompile("junit:junit:4.12")
 
     compileOnly 'org.projectlombok:lombok:1.18.6'
