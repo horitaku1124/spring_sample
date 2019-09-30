@@ -5,14 +5,17 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.LogStream;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+
+import static java.util.Arrays.asList;
 
 /**
  * https://github.com/spotify/docker-client/blob/master/docs/user_manual.md
@@ -22,6 +25,14 @@ public class DockerEventer {
     protected ContainerCreation creation;
     private List<Consumer<String>> stdoutReceivers = new ArrayList<>();
     private Thread mainThread;
+    private Thread commandThread;
+    public List<String> commands;
+    private static Map<String, List<PortBinding>> createSingleBind(String guestPort, String host, String hostPort) {
+        return new HashMap<>() {{
+            put(guestPort, asList(PortBinding.of(host, hostPort)));
+        }};
+    }
+
     public DockerEventer(ContainerConfig.Builder builder1) throws DockerCertificateException, DockerException, InterruptedException {
 
 
@@ -51,7 +62,7 @@ public class DockerEventer {
             }
         });
         start();
-        int timeout = 100;
+        int timeout = 1000;
         while(mainThread.isAlive()) {
             try {
                 Thread.sleep(50);
@@ -89,6 +100,35 @@ public class DockerEventer {
             }
         });
         mainThread.start();
+
+        if (commands.size() > 0) {
+            commandThread = new Thread(() -> {
+                try {
+                    for (String cmd: commands) {
+                        System.out.println("cmd=" + cmd);
+                        final String[] command = {"sh", "-c", cmd};
+                        final ExecCreation execCreation;
+                            execCreation = docker.execCreate(
+                                    creation.id(), command, DockerClient.ExecCreateParam.attachStdout(),
+                                    DockerClient.ExecCreateParam.attachStderr());
+
+                        final LogStream output = docker.execStart(execCreation.id());
+                        output.forEachRemaining(s -> {
+                            int len = s.content().remaining();
+                            byte[] bytes = new byte[len];
+                            s.content().get(bytes);
+                            String str = new String(bytes, 0, len, StandardCharsets.UTF_8);
+                            stdoutReceivers.forEach(consumer -> {
+                                consumer.accept(str);
+                            });
+                        });
+                    }
+                } catch (DockerException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+            commandThread.start();
+        }
     }
 
     public void removeWhenFinish() throws DockerException, InterruptedException {
@@ -98,16 +138,23 @@ public class DockerEventer {
     }
 
     public static class DockerEventerOption {
-        private ContainerConfig.Builder builder1;
+        private ContainerConfig.Builder containerBuilder;
+        private List<String> commands = new ArrayList<>();
         private List<Consumer<String>> stdoutReceivers = new ArrayList<>();
 
         public DockerEventerOption addStdoutReceiver(Consumer<String> receiver) {
             this.stdoutReceivers.add(receiver);
             return this;
         }
+
+        public void addCommand(String command) {
+            commands.add(command);
+        }
+
         public DockerEventer build() throws InterruptedException, DockerException, DockerCertificateException {
-            DockerEventer dockerEventer = new DockerEventer(builder1);
+            DockerEventer dockerEventer = new DockerEventer(containerBuilder);
             dockerEventer.stdoutReceivers.addAll(stdoutReceivers);
+            dockerEventer.commands = commands;
             return dockerEventer;
         }
     }
@@ -115,20 +162,58 @@ public class DockerEventer {
     public static class DockerEventerBuilder {
         public static DockerEventerOption command(String dockerCommand) {
             String[] bow = dockerCommand.split(" +");
-            ContainerConfig.Builder builder1 = ContainerConfig.builder();
+            ContainerConfig.Builder containerBuilder = ContainerConfig.builder();
+            HostConfig.Builder hostBuilder = HostConfig.builder();
+            DockerEventerOption option = new DockerEventerOption();
             switch (bow[0]) {
                 case "docker":
                     String operation = bow[1];
-//                String option = bow[2];
-                    String image = bow[2];
-                    builder1.image(image);
-//                String command = bow[4];
+                    switch (operation) {
+                        case "run":
+                            var mandatoryOptions = new ArrayList<String>();
+                            boolean optionArea = true;
+                            for (int i = 2;i < bow.length;i++) {
+                                var op = bow[i];
+                                if (optionArea && op.startsWith("-")) {
+                                    // use TTY
+                                    if (op.contains("t")) {
+
+                                    }
+                                    // Interactive
+                                    if (op.contains("i")) {
+
+                                    }
+                                    // Publish port
+                                    if (op.contains("p")) {
+                                        var portBind = bow[++i];
+                                        var ports = portBind.split(":");
+                                        hostBuilder.portBindings(createSingleBind(ports[1], "0.0.0.0", ports[0]));
+                                        containerBuilder.exposedPorts(ports[1]);
+                                    }
+                                } else {
+                                    mandatoryOptions.add(op);
+                                    optionArea = false;
+                                }
+                            }
+                            containerBuilder.image(mandatoryOptions.get(0));
+                            if (mandatoryOptions.size() > 1) {
+                                var initialCommand = new String[mandatoryOptions.size() - 1];
+                                for (int i = 0;i < initialCommand.length;i++) {
+                                    initialCommand[i] = mandatoryOptions.get(i + 1);
+                                }
+                                containerBuilder.cmd("sh", "-c", "while :; do sleep 1; done");
+                                option.addCommand(String.join(" ", initialCommand));
+                            }
+                            break;
+                        default:
+                            throw new RuntimeException("ng");
+                    }
                     break;
                 default:
                     throw new RuntimeException("ng");
             }
-            DockerEventerOption option = new DockerEventerOption();
-            option.builder1 = builder1;
+            containerBuilder.hostConfig(hostBuilder.build());
+            option.containerBuilder = containerBuilder;
             return option;
         }
     }
