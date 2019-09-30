@@ -34,20 +34,6 @@ public class DockerEventer {
     }
 
     public DockerEventer(ContainerConfig.Builder builder1) throws DockerCertificateException, DockerException, InterruptedException {
-
-
-//        HostConfig hostConfig = HostConfig.builder()
-//                .appendBinds("/var/lib:/mnt/lib")
-//                .portBindings(createSingleBind(port, "0.0.0.0", hostPort))
-//                .build();
-
-//        ContainerConfig containerConfig = ContainerConfig.builder()
-//                .image("spring_sample1:latest")
-//                .cmd("sh", "-c", "while :; do sleep 1; done")
-//                .hostConfig(hostConfig)
-//                .exposedPorts(port)
-//                .build();
-
         DefaultDockerClient.Builder builder = DefaultDockerClient.fromEnv();
         docker = builder.build();
         creation = docker.createContainer(builder1.build());
@@ -182,6 +168,11 @@ public class DockerEventer {
                                     // Interactive
                                     if (op.contains("i")) {
 
+                                    }
+                                    // Volume mount
+                                    if (op.contains("v")) {
+                                        var volume = bow[++i];
+                                        hostBuilder.appendBinds(volume);
                                     }
                                     // Publish port
                                     if (op.contains("p")) {
