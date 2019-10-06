@@ -72,15 +72,19 @@ public class DockerEventer {
         }
         mainThread = new Thread(() -> {
             try (LogStream stream = docker.logs(creation.id(), DockerClient.LogsParam.stdout(), DockerClient.LogsParam.stderr())) {
-                stream.forEachRemaining(s -> {
-                    int len = s.content().remaining();
-                    byte[] bytes = new byte[len];
-                    s.content().get(bytes);
-                    String str = new String(bytes, 0, len, StandardCharsets.UTF_8);
-                    stdoutReceivers.forEach(consumer -> {
-                        consumer.accept(str);
+                ContainerInfo containerInfo = docker.inspectContainer(creation.id());
+                while (containerInfo.state().running()) {
+                    stream.forEachRemaining(s -> {
+                        int len = s.content().remaining();
+                        byte[] bytes = new byte[len];
+                        s.content().get(bytes);
+                        String str = new String(bytes, 0, len, StandardCharsets.UTF_8);
+                        stdoutReceivers.forEach(consumer -> {
+                            consumer.accept(str);
+                        });
                     });
-                });
+                    Thread.sleep(50);
+                }
             } catch (InterruptedException | DockerException e) {
                 e.printStackTrace();
             }
