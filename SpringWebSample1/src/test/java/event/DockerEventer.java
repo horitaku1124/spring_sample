@@ -7,7 +7,13 @@ import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.*;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +33,8 @@ public class DockerEventer {
     private Thread mainThread;
     private Thread commandThread;
     public List<String> commands;
+    private HttpClient client = null;
+
     private static Map<String, List<PortBinding>> createSingleBind(String guestPort, String host, String hostPort) {
         return new HashMap<>() {{
             put(guestPort, asList(PortBinding.of(host, hostPort)));
@@ -38,6 +46,17 @@ public class DockerEventer {
         docker = builder.build();
         creation = docker.createContainer(builder1.build());
     }
+
+    private HttpClient getHttpClient() {
+        if (client == null) {
+            client = HttpClient.newBuilder()
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(3))
+                    .build();
+        }
+        return client;
+    }
+
     public void startAndWaitForBoot(String pattern) throws DockerException, InterruptedException {
         Pattern pattern1 = Pattern.compile(pattern);
         final boolean[] started = {false};
@@ -125,6 +144,29 @@ public class DockerEventer {
         docker.stopContainer(creation.id(), 10);
         docker.removeContainer(creation.id());
         docker.close();
+    }
+
+    public void startAndWaitUri(String uri) throws IOException, InterruptedException, DockerException {
+        start();
+        HttpClient httpClient = getHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .timeout(Duration.ofMinutes(1))
+                .build();
+
+        for (int i = 0;i < 30;i++) {
+            try {
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 200) {
+                    return;
+                }
+            } catch (IOException e) {
+//                System.err.println(e.getMessage());
+            }
+            Thread.sleep(1000);
+        }
+        throw new RuntimeException("time out of => " + uri);
     }
 
     public static class DockerEventerOption {

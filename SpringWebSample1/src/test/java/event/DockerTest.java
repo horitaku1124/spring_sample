@@ -4,6 +4,8 @@ import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import org.junit.Test;
 
+import java.io.IOException;
+
 import static event.DockerEventer.DockerEventerBuilder.command;
 
 public class DockerTest {
@@ -39,6 +41,15 @@ public class DockerTest {
                 .build();
         eventer.startAndWaitForBoot("Tomcat started on port");
         Thread.sleep(20 * 1000);
+        eventer.removeWhenFinish();
+    }
+    @Test
+    public void test5() throws InterruptedException, DockerException, DockerCertificateException, IOException {
+        String uri = "http://localhost:8180/hello/world";
+        DockerEventer eventer = command("docker run -it -p 8180:8080 spring_sample1 java -jar /root/SpringWebSample1-0.0.1-SNAPSHOT.jar")
+                .addStdoutReceiver(s -> System.out.print("S4:" + s))
+                .build();
+        eventer.startAndWaitUri(uri);
         eventer.removeWhenFinish();
     }
 }
