@@ -103,6 +103,7 @@ public class DockerEventer {
                         });
                     });
                     Thread.sleep(50);
+                    containerInfo = docker.inspectContainer(creation.id()); // TODO really need to retrieve?
                 }
             } catch (InterruptedException | DockerException e) {
                 e.printStackTrace();
