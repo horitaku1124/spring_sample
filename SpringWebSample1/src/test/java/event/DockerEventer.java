@@ -57,7 +57,7 @@ public class DockerEventer {
         return client;
     }
 
-    public void startAndWaitForBoot(String pattern) throws DockerException, InterruptedException {
+    public void waitForBoot(String pattern) {
         Pattern pattern1 = Pattern.compile(pattern);
         final boolean[] started = {false};
         this.stdoutReceivers.add(s -> {
@@ -66,7 +66,6 @@ public class DockerEventer {
                 started[0] = true;
             }
         });
-        start();
         int timeout = 1000;
         while(mainThread.isAlive()) {
             try {
@@ -82,6 +81,34 @@ public class DockerEventer {
                 throw new RuntimeException("timeout to start");
             }
         }
+    }
+
+    public void startAndWaitForBoot(String pattern) throws DockerException, InterruptedException {
+
+        start();
+        waitForBoot(pattern);
+    }
+
+    public void waitUri(String uri) throws InterruptedException {
+        HttpClient httpClient = getHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .timeout(Duration.ofMinutes(1))
+                .build();
+
+        for (int i = 0;i < 30;i++) {
+            try {
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() == 200) {
+                    return;
+                }
+            } catch (IOException | InterruptedException e) {
+//                System.err.println(e.getMessage());
+            }
+            Thread.sleep(1000);
+        }
+        throw new RuntimeException("time out of => " + uri);
     }
 
     public void start() throws DockerException, InterruptedException {
@@ -149,25 +176,7 @@ public class DockerEventer {
 
     public void startAndWaitUri(String uri) throws IOException, InterruptedException, DockerException {
         start();
-        HttpClient httpClient = getHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(uri))
-                .timeout(Duration.ofMinutes(1))
-                .build();
-
-        for (int i = 0;i < 30;i++) {
-            try {
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-                if (response.statusCode() == 200) {
-                    return;
-                }
-            } catch (IOException e) {
-//                System.err.println(e.getMessage());
-            }
-            Thread.sleep(1000);
-        }
-        throw new RuntimeException("time out of => " + uri);
+        waitUri(uri);
     }
 
     public static class DockerEventerOption {
